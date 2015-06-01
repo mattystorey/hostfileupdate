@@ -1,9 +1,9 @@
-__author__ = 'Jason Vanzin'
+__author__ = 'Jason Vanzin' #updated by matt storey for own use with thanks
 import sys #used to get commandline arguments
 import re #used for regular expressions
+import fileinput #use fileinput for overwriting lines
 
-
-def exists(hostname):
+def exists(hostname, ipaddress):
     """ str -> bool
     The exists function opens the host file and checks to see if the hostname requested exists in the host file.
     It opens the host file, reads the lines, and then a for loop checks each line to see if the hostname is in it.
@@ -20,13 +20,18 @@ def exists(hostname):
     f.close()
     for item in hostfiledata:
         if hostname in item:
-            return True
+            print "Hostname present, checking IP address"
+            if ipaddress in item:
+                print "IP address present - no changes"
+                return True
+            #return True
     return False
-
-
+    
+    
 def update(ipaddress, hostname):
     """
     The update function takes the ip address and hostname passed into the function and adds it to the host file.
+    Script will also locate previous entries and replace them.
     :param ipaddress:
     :param hostname:
     """
@@ -34,10 +39,21 @@ def update(ipaddress, hostname):
         filename = '/etc/hosts'
     else:
         filename = 'c:\windows\system32\drivers\etc\hosts'
-    outputfile = open(filename, 'a')
-    entry = "\n" + ipaddress + "\t" + hostname + "\n"
-    outputfile.writelines(entry)
-    outputfile.close()
+    
+    outputfile = open(filename,'r+') #to finish from here
+    d = outputfile.readlines()
+    outputfile.seek(0)
+    for i in d:
+        if i != hostname:
+            outputfile.write(i)
+    f.truncate()
+    f.close() #to resolve
+    
+    outputfile = open(filename, 'a') #open the file
+    
+    entry = "\n" + ipaddress + "\t" + hostname + "\n" #define what is to be written
+    outputfile.writelines(entry) #write to file
+    outputfile.close() #close file and exit
 
 
 def validIP(ipaddress):
@@ -80,19 +96,15 @@ def isValidHostname(hostname):
 
 
 def main():
-    args = sys.argv #creates a list of argument from the command line.
-    if len(args) != 3: #if the number of arguments do not exist, exit with usage format.
-        print('usage: hostfileupdate.py [ipadddress] [hostmame]')
-        sys.exit(2)
-    hostname = args[-1]
-    ipaddress = args[-2]
+    hostname = 'test.monkey'
+    ipaddress = '127.0.0.1'
 
     if not validIP(ipaddress): #checks the IP address to see if it's valid.
-        print(ipaddress, "is not a valid IP address. Usage: hostfileupdate.py [ipadddress] [hostmame]")
+        print(ipaddress, "is not a valid IP address. Please check IP adddress")
         sys.exit(2)
 
     if not isValidHostname(hostname): #checks the host name to see if it's valid.
-        print(hostname, "is not a valid hostname. Usage: hostfileupdate.py [ipadddress] [hostmame]")
+        print(hostname, "is not a valid hostname. Please check host name")
         sys.exit(2)
 
     if exists(hostname): #checks to see if the host name already exists in the host file and exits if it does.
@@ -100,7 +112,6 @@ def main():
         sys.exit(2)
 
     update(ipaddress, hostname) #Calls the update function.
-
 
 if __name__ == '__main__':
     main()
